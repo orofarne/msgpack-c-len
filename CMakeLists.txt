@@ -4,11 +4,12 @@ project(msgpack-c-len C)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 set(CMAKE_C_FLAGS " -std=c99 -O3 -Wall -Wextra -Wimplicit")
-
-OPTION(TESTS "enable_testing" ON)
+add_definitions(-D_GNU_SOURCE)
 
 add_library(msgpack-c-len STATIC msglen.c)
 install(TARGETS msgpack-c-len DESTINATION lib)
+
+OPTION(TESTS "enable_testing" ON)
 
 if(TESTS)
     find_package(CUnit REQUIRED)

@@ -1,8 +1,6 @@
 #include "msglen.h"
 #include "bswap.h"
 
-#define _GNU_SOURCE
-
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
