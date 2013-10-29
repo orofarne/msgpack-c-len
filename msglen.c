@@ -79,7 +79,7 @@ msgpackclen_msg_buf_read_elem (void *buf, size_t off, size_t size, char **error)
 		r = msgpackclen_msg_buf_read_elems(buf, off, size, n, error);
 		return r > 0 ? r + 1 : 0;
 	}
-	// FixRaw 	101xxxxx 	0xa0 - 0xbf
+	// FixStr 	101xxxxx 	0xa0 - 0xbf
 	if (type >= 0xa0 && type <= 0xbf)
 	{
 		n = type ^ 0xa0;
@@ -150,7 +150,17 @@ msgpackclen_msg_buf_read_elem (void *buf, size_t off, size_t size, char **error)
 	{
 		return 9;
 	}
-	// raw 16 	11011010 	0xda
+	// str 8 	11011001 	0xd9
+	if (type == 0xd9)
+	{
+		if (off + 1 > size)
+		{
+			return 0;
+		}
+		n = *(uint8_t *)((char *)buf + off);
+		return n + 2;
+	}
+	// str 16 	11011010 	0xda
 	if (type == 0xda)
 	{
 		if (off + 2 > size)
@@ -160,8 +170,38 @@ msgpackclen_msg_buf_read_elem (void *buf, size_t off, size_t size, char **error)
 		n = bswap16 (*(uint16_t *)((char *)buf + off));
 		return n + 3;
 	}
-	// raw 32 	11011011 	0xdb
+	// str 32 	11011011 	0xdb
 	if (type == 0xdb)
+	{
+		if (off + 4 > size)
+		{
+			return 0;
+		}
+		n = bswap32 (*(uint32_t *)((char *)buf + off));
+		return n + 5;
+	}
+	// bin 8 	0xc4
+	if (type == 0xc4)
+	{
+		if (off + 1 > size)
+		{
+			return 0;
+		}
+		n = *(uint8_t *)((char *)buf + off);
+		return n + 2;
+	}
+	// bin 16 	0xc5
+	if (type == 0xc5)
+	{
+		if (off + 2 > size)
+		{
+			return 0;
+		}
+		n = bswap16 (*(uint16_t *)((char *)buf + off));
+		return n + 3;
+	}
+	// bin 32 	0xc6
+	if (type == 0xc6)
 	{
 		if (off + 4 > size)
 		{

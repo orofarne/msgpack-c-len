@@ -1,10 +1,12 @@
 #include "msglen.h"
+#include "bswap.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <stdint.h>
 
 #include <CUnit/Basic.h>
 
@@ -93,6 +95,55 @@ void testCasesMpacPart(void)
         free(error);
 }
 
+void testNewSpecStr8(void)
+{
+    char *error = NULL;
+
+    char buf[] = {'\xd9', (uint8_t)5, 'H', 'e', 'l', 'l', 'o'};
+    size_t n = sizeof(buf);
+
+    CU_ASSERT_EQUAL(msgpackclen_buf_read (buf, n, &error), n);
+    CU_ASSERT_PTR_EQUAL(error, NULL);
+
+    if (error)
+        free(error);
+}
+
+void testNewSpecBin(void)
+{
+    char *error = NULL;
+
+    union {
+        uint16_t num;
+        char bytes[2];
+    } n16;
+
+    n16.num = 5;
+    n16.num = bswap16(n16.num);
+
+    union {
+        uint32_t num;
+        char bytes[4];
+    } n32;
+
+    n32.num = 5;
+    n32.num = bswap32(n32.num);
+
+    char buf[] = {'\x93', /* 10010011 */
+        '\xc4', (uint8_t)5, 'H', 'e', 'l', 'l', 'o',
+        '\xc5', n16.bytes[0], n16.bytes[1], 'H', 'e', 'l', 'l', 'o',
+        '\xc6', n32.bytes[0], n32.bytes[1], n32.bytes[2], n32.bytes[3],
+                                                    'H', 'e', 'l', 'l', 'o',
+    };
+    size_t n = sizeof(buf);
+
+    CU_ASSERT_EQUAL(msgpackclen_buf_read (buf, n, &error), n);
+    CU_ASSERT_PTR_EQUAL(error, NULL);
+
+    if (error)
+        free(error);
+}
+
 int main()
 {
     CU_pSuite pSuite = NULL;
@@ -113,6 +164,8 @@ int main()
         (NULL == CU_add_test(pSuite, "Simple test", testSIMPLE)) ||
         (NULL == CU_add_test(pSuite, "cases.mpac test", testCasesMpac)) ||
         (NULL == CU_add_test(pSuite, "cases.mpac (part) test", testCasesMpacPart)) ||
+        (NULL == CU_add_test(pSuite, "New spec str8 test", testNewSpecStr8)) ||
+        (NULL == CU_add_test(pSuite, "New spec bin test", testNewSpecBin)) ||
         0)
     {
         CU_cleanup_registry();
